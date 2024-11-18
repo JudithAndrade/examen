@@ -1,0 +1,39 @@
+<!-- registrar_pago.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Pago</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>Registrar Pago de {{ nombre_cliente }}</h1>
+    <form method="POST">
+        <label for="fecha_inicial">Fecha Inicial:</label>
+        <input type="date" name="fecha_inicial" required>
+
+        <label for="fecha_final">Fecha Final:</label>
+        <input type="date" name="fecha_final" required>
+
+        <label for="cantidad_pago">Cantidad a Pagar:</label>
+        <input type="number" name="cantidad_pago" required>
+
+        <label for="frecuencia">Frecuencia:</label>
+        <select name="frecuencia" required>
+            <option value="Semanal">Semanal</option>
+            <option value="Mensual">Mensual</option>
+            <option value="Trimestral">Trimestral</option>
+            <option value="Semestral">Semestral</option>
+            <option value="Anual">Anual</option>
+        </select>
+
+        <label for="fecha_cobro">Fecha de Cobro:</label>
+        <input type="date" name="fecha_cobro" required>
+
+        <button type="submit">Registrar Pago</button>
+    </form>
+
+    <a href="/logout">Cerrar Sesión</a>
+</body>
+</html>

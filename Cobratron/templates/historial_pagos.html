@@ -1,0 +1,33 @@
+<!-- historial_pagos.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Pagos</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>Historial de Pagos de {{ nombre }}</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha de Cobro</th>
+                <th>Estado</th>
+                <th>Cantidad a Pagar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pago in reporte %}
+            <tr>
+                <td>{{ pago[0] }}</td>
+                <td>{{ pago[3] }}</td>  <!-- Mostrar la frecuencia de pago -->
+                <td>{{ pago[2] }}</td>  <!-- Mostrar la cantidad de pago -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{{ url_for('dashboard') }}">Volver al Dashboard</a>
+    <a href="/logout">Cerrar Sesión</a>
+</body>
+</html>
