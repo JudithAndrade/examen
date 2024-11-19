@@ -1,39 +1,71 @@
-<!-- registrar_pago.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrar Pago</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <h1>Registrar Pago de {{ nombre_cliente }}</h1>
-    <form method="POST">
-        <label for="fecha_inicial">Fecha Inicial:</label>
-        <input type="date" name="fecha_inicial" required>
+    <div class="container">
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-6">
+                <h1 class="text-center mb-4">Registrar Pago de {{ nombre_cliente }}</h1>
+                <form method="POST" class="border p-4 rounded shadow-sm">
+                    <div class="form-group">
+                        <label for="fecha_inicial">Fecha Inicial:</label>
+                        <input type="date" name="fecha_inicial" class="form-control" required>
+                    </div>
 
-        <label for="fecha_final">Fecha Final:</label>
-        <input type="date" name="fecha_final" required>
+                    <div class="form-group">
+                        <label for="fecha_final">Fecha Final:</label>
+                        <input type="date" name="fecha_final" class="form-control" required>
+                    </div>
 
-        <label for="cantidad_pago">Cantidad a Pagar:</label>
-        <input type="number" name="cantidad_pago" required>
+                    <div class="form-group">
+                        <label for="cantidad_pago">Cantidad a Pagar:</label>
+                        <input type="number" name="cantidad_pago" class="form-control" required>
+                    </div>
 
-        <label for="frecuencia">Frecuencia:</label>
-        <select name="frecuencia" required>
-            <option value="Semanal">Semanal</option>
-            <option value="Mensual">Mensual</option>
-            <option value="Trimestral">Trimestral</option>
-            <option value="Semestral">Semestral</option>
-            <option value="Anual">Anual</option>
-        </select>
+                    <div class="form-group">
+                        <label for="frecuencia">Frecuencia:</label>
+                        <select name="frecuencia" class="form-control" required>
+                            <option value="Semanal">Semanal</option>
+                            <option value="Mensual">Mensual</option>
+                            <option value="Trimestral">Trimestral</option>
+                            <option value="Semestral">Semestral</option>
+                            <option value="Anual">Anual</option>
+                        </select>
+                    </div>
 
-        <label for="fecha_cobro">Fecha de Cobro:</label>
-        <input type="date" name="fecha_cobro" required>
+                    <div class="form-group">
+                        <label for="fecha_cobro">Fecha de Cobro:</label>
+                        <input type="date" name="fecha_cobro" class="form-control" required>
+                    </div>
 
-        <button type="submit">Registrar Pago</button>
-    </form>
+                    <div class="form-group">
+                        <label for="estado_pago">Estado del Pago:</label>
+                        <select name="estado_pago" class="form-control" required>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Pagado">Pagado</option>
+                            <option value="Atrasado">Atrasado</option>
+                            <option value="Cancelado">Cancelado</option>
+                        </select>
+                    </div>
 
-    <a href="/logout">Cerrar Sesión</a>
+                    <button type="submit" class="btn btn-primary btn-block">Registrar Pago</button>
+                </form>
+
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('logout') }}" class="btn btn-secondary">Cerrar Sesión</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

@@ -24,10 +24,10 @@ def get_db_connection():
         print("Error al conectar a la base de datos:", ex)
         return None
 
-# Ruta para la página de inicio (login o registro)
+# Ruta para la página de inicio (login)
 @app.route('/', methods=['GET', 'POST'])
 def home():
-    return render_template('login.html')  # Renderiza el formulario de login
+    return render_template('login.html')
 
 # Ruta para el inicio de sesión
 @app.route('/login', methods=['POST'])
@@ -41,15 +41,14 @@ def login():
 
     try:
         cursor = connection.cursor()
-        query = """
-        SELECT contrasena FROM Clientes WHERE email = %s
-        """
+        query = "SELECT contrasena, nombre FROM clientes WHERE email = %s"
         cursor.execute(query, (email,))
         result = cursor.fetchone()
-        
+
         if result and check_password_hash(result[0], contrasena):
-            session['email'] = email  # Guardar email del usuario en la sesión
-            return redirect(url_for('dashboard'))  # Redirige al dashboard o página protegida
+            session['email'] = email  # Guardar email en la sesión
+            session['nombre_cliente'] = result[1]  # Guardar el nombre del cliente
+            return redirect(url_for('registrar_pago'))  # Redirigir al formulario de registro de pago
         else:
             return jsonify({"error": "Correo o contraseña incorrectos"}), 400
     except Exception as ex:
@@ -58,39 +57,20 @@ def login():
     finally:
         connection.close()
 
-# Ruta de dashboard (solo accesible si el usuario está logueado)
-@app.route('/dashboard')
-def dashboard():
+# Ruta para registrar pagos
+@app.route('/registrar-pago', methods=['GET', 'POST'])
+def registrar_pago():
     if 'email' not in session:
-        return redirect(url_for('home'))  # Si no está logueado, redirige al login
+        return redirect(url_for('home'))
 
-    return f'Bienvenido, {session["email"]}! Este es tu dashboard.'
-
-# Validar el email
-def is_valid_email(email):
-    email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
-    return re.match(email_regex, email) is not None
-
-# Ruta de registro
-@app.route('/register', methods=['GET', 'POST'])
-def register():
     if request.method == 'POST':
-        nombre = request.form['nombre']
-        email = request.form['email']
-        telefono = request.form.get('telefono')
-        contrasena = request.form['contrasena']
-        confirmar_contrasena = request.form['confirmar_contrasena']
-
-        # Validación de las contraseñas
-        if contrasena != confirmar_contrasena:
-            return jsonify({"error": "Las contraseñas no coinciden"}), 400
-
-        # Validar el email
-        if not is_valid_email(email):
-            return jsonify({"error": "El formato del email es inválido"}), 400
-
-        # Hashear la contraseña
-        contrasena_hashed = generate_password_hash(contrasena)
+        # Extraer datos del formulario
+        fecha_inicial = request.form['fecha_inicial']
+        fecha_final = request.form['fecha_final']
+        cantidad_pago = request.form['cantidad_pago']
+        frecuencia = request.form['frecuencia']
+        fecha_cobro = request.form['fecha_cobro']
+        estado_pago = "Pendiente"  # Estado por defecto
 
         connection = get_db_connection()
         if connection is None:
@@ -98,21 +78,55 @@ def register():
 
         try:
             cursor = connection.cursor()
-            query = """
-            INSERT INTO Clientes (nombre, email, telefono, contrasena)
-            VALUES (%s, %s, %s, %s)
+            
+            # Obtener el cliente_id usando el email del usuario en sesión
+            query_cliente_id = "SELECT cliente_id FROM clientes WHERE email = %s"
+            cursor.execute(query_cliente_id, (session['email'],))
+            cliente_id_result = cursor.fetchone()
+
+            if cliente_id_result is None:
+                return jsonify({"error": "No se encontró el cliente con ese email"}), 404
+
+            cliente_id = cliente_id_result[0]
+
+            # Insertar el pago en la tabla 'pagos'
+            query_insert_pago = """
+            INSERT INTO pagos (cliente_id, cantidad_pago, frecuencia, fecha_inicial, fecha_final, fecha_cobro, estado_pago)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING pago_id
             """
-            cursor.execute(query, (nombre, email, telefono, contrasena_hashed))
+            cursor.execute(query_insert_pago, (cliente_id, cantidad_pago, frecuencia, fecha_inicial, fecha_final, fecha_cobro, estado_pago))
+            pago_id = cursor.fetchone()[0]  # Capturar el pago_id generado
             connection.commit()
-            cursor.close()
-            return redirect(url_for('home'))  # Después de registrarse, redirige al login
+
+            return redirect(url_for('dashboard'))  # Redirigir al dashboard tras registrar el pago
+
         except Exception as ex:
-            print("Error al registrar usuario:", ex)
+            print("Error al registrar el pago:", ex)
             return jsonify({"error": str(ex)}), 500
         finally:
             connection.close()
 
-    return render_template('register.html')  # Muestra el formulario de registro
+    # Mostrar formulario de registro de pago
+    return render_template('registrar_pago.html', nombre_cliente=session.get('nombre_cliente', 'Usuario'))
+
+# Ruta del dashboard
+@app.route('/dashboard')
+def dashboard():
+    if 'email' not in session:
+        return redirect(url_for('home'))
+    return f"Bienvenido, {session['nombre_cliente']}! Este es tu dashboard."
+
+# Ruta para cerrar sesión
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('home'))
+
+# Validar el email
+def is_valid_email(email):
+    email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    return re.match(email_regex, email) is not None
 
 if __name__ == '__main__':
     app.run(host="127.0.0.1", port=5000, debug=True)
