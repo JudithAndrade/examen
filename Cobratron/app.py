@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash
 import pg8000
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
@@ -23,6 +23,11 @@ def get_db_connection():
     except Exception as ex:
         print("Error al conectar a la base de datos:", ex)
         return None
+
+# Validar el email
+def is_valid_email(email):
+    email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    return re.match(email_regex, email) is not None
 
 # Ruta para la página de inicio (login)
 @app.route('/', methods=['GET', 'POST'])
@@ -93,10 +98,8 @@ def registrar_pago():
             query_insert_pago = """
             INSERT INTO pagos (cliente_id, cantidad_pago, frecuencia, fecha_inicial, fecha_final, fecha_cobro, estado_pago)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
-            RETURNING pago_id
             """
             cursor.execute(query_insert_pago, (cliente_id, cantidad_pago, frecuencia, fecha_inicial, fecha_final, fecha_cobro, estado_pago))
-            pago_id = cursor.fetchone()[0]  # Capturar el pago_id generado
             connection.commit()
 
             return redirect(url_for('dashboard'))  # Redirigir al dashboard tras registrar el pago
@@ -123,10 +126,50 @@ def logout():
     session.clear()
     return redirect(url_for('home'))
 
-# Validar el email
-def is_valid_email(email):
-    email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
-    return re.match(email_regex, email) is not None
+# Ruta para registrar un nuevo usuario
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        # Extraer datos del formulario
+        nombre = request.form['nombre']
+        email = request.form['email']
+        telefono = request.form['telefono']
+        contrasena = request.form['contrasena']
+        confirmar_contrasena = request.form['confirmar_contrasena']
+
+        # Validaciones
+        if not nombre or not email or not telefono or not contrasena or not confirmar_contrasena:
+            return jsonify({"error": "Todos los campos son obligatorios"}), 400
+
+        if contrasena != confirmar_contrasena:
+            return jsonify({"error": "Las contraseñas no coinciden"}), 400
+
+        if not is_valid_email(email):
+            return jsonify({"error": "Correo electrónico no válido"}), 400
+
+        # Hashear la contraseña
+        hashed_password = generate_password_hash(contrasena, method='pbkdf2:sha256', salt_length=8)
+
+        # Guardar en la base de datos
+        connection = get_db_connection()
+        if connection is None:
+            return jsonify({"error": "No se pudo conectar a la base de datos"}), 500
+
+        try:
+            cursor = connection.cursor()
+            query = "INSERT INTO clientes (nombre, email, telefono, contrasena) VALUES (%s, %s, %s, %s)"
+            cursor.execute(query, (nombre, email, telefono, hashed_password))
+            connection.commit()
+
+            return redirect(url_for('home'))  # Redirigir a la página de inicio
+        except Exception as ex:
+            print("Error al registrar usuario:", ex)
+            return jsonify({"error": "Error al registrar usuario. Es posible que el correo ya esté registrado."}), 500
+        finally:
+            connection.close()
+
+    # Si el método es GET, mostrar el formulario de registro
+    return render_template('register.html')
 
 if __name__ == '__main__':
     app.run(host="127.0.0.1", port=5000, debug=True)
