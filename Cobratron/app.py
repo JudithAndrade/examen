@@ -15,6 +15,7 @@ DATABASE_CONFIG = {
     'port': 5432
 }
 
+
 # Función para obtener la conexión a la base de datos
 def get_db_connection():
     try:
